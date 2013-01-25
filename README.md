@@ -15,3 +15,5 @@ Still basic, but more comfy:
 - Run "InsertUnicode: General punctuation" or another to directly jump into the given block.
 - Open the `Default.sublime-commands` file to change which blocks are displayed in your command palette.
 - Make some key bindings to the palettes you often use.
+
+Use Sublime Text's fuzzy matching to find interesting symbols in the lists.
