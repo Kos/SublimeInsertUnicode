@@ -1,10 +1,13 @@
 import sublime, sublime_plugin
 import collections, unicodedata
 
-EXPECTED_VER = '5.1.0'
+EXPECTED_UNIDATA_VERSION = '5.1.0'
 
-if unicodedata.unidata_version != EXPECTED_VER:
-	raise Exception('This plugin expects Sublime to provide Unicode {0}'.format(EXPECTED_VER))
+# Make sure that Python's unicodedata version agrees with the metadata collected here.
+# To update, edit BLOCKS_RAW below
+
+if unicodedata.unidata_version != EXPECTED_UNIDATA_VERSION:
+	raise Exception('This plugin expects Sublime to provide Unicode {0}'.format(EXPECTED_UNIDATA_VERSION))
 
 
 def show_block_list(view, edit):
@@ -19,7 +22,7 @@ def show_block_list(view, edit):
 def show_block(view, edit, block):
 
 	codeunits = xrange(block.min, block.max-1)
-	names = [unicode_name(codeunit, fallback='(unknown)') for codeunit in codeunits]
+	names = [get_label(codeunit, fallback='(unknown)') for codeunit in codeunits]
 
 	def on_done(n):
 		if n == -1:
@@ -27,36 +30,48 @@ def show_block(view, edit, block):
 		codeunit = codeunits[n]
 		for region in view.sel():
 			insertion = my_unichr(codeunit)
-			insertion = u'!{0}!'.format(insertion) # DEBUG
 			view.insert(edit, region.end(), insertion)
 
 	view.window().show_quick_panel(names, on_done, 0)
-		# Insert code unit into "the editor"
 
-
-def unicode_name(codeunit, fallback=None):
+def get_label(codeunit, fallback):
+	'Returns a pretty label for the given code unit. Uses a fallback name if not found in unicodedata'
 	u = my_unichr(codeunit)
 	try:
 		name = unicodedata.name(u)
-	except ValueError, e:
-		print e
+	except ValueError:
 		name = fallback
 	return '[{0}] {1}'.format(hex(codeunit), name)
-
-class ShowBlockListCommand(sublime_plugin.TextCommand):
-
-	def run(self, edit, **kwargs):
-		print 'Hello'
-		show_block_list(self.view, edit)
 
 def my_unichr(n):
 	'unichr() can fail with literals bigger than 0xFFFF (narrow Python build)'
 	literal = "u'" + "\U" + hex(n)[2:].rjust(8,'0') + "'"
 	return eval(literal)
 
+class InsertUnicodeShowBlockListCommand(sublime_plugin.TextCommand):
+
+	def run(self, edit, **kwargs):
+		show_block_list(self.view, edit)
+
+class InsertUnicodeShowBlockCommand(sublime_plugin.TextCommand):
+
+	def run(self, edit, **kwargs):
+		try:
+			name = kwargs.pop('name')
+		except:
+			raise ValueError("Name not specified")
+		try:
+			(block,) = (block for block in BLOCKS if block.name.lower() == name.lower())
+		except ValueError:
+			msg = 'InsertUnicode: No such block: {0}'.format(name)
+			sublime.status_message(msg)
+			return
+		show_block(self.view, edit, block)
 
 UnicodeBlock = collections.namedtuple('UnicodeBlock', 'min max name')
 
+# Got this from:
+# ftp://ftp.unicode.org/Public/5.1.0/ucd/Blocks.txt
 BLOCKS_RAW = '''\
 0000..007F; Basic Latin
 0080..00FF; Latin-1 Supplement
@@ -240,3 +255,10 @@ def parse_block(line):
 BLOCKS = map(parse_block, BLOCKS_RAW.splitlines())
 
 
+def generate_commands():
+	'''Generates the set of command defs that you can paste into a sublime-commands file.
+	Initially they are commented out, stay safe!
+	'''
+	command_template = '//\t/* {0:40} */    ,{{"caption": "InsertUnicode: {0}", "command": "insert_unicode_show_block" , "args": {{"name": "{0}"}}}}'
+	for b in BLOCKS:
+		print command_template.format(b.name)
