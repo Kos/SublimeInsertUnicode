@@ -7,6 +7,7 @@
 // (Find your user prefs in Preferences → Key bindings – User)
 
 // These are auto-generated, see `generate_commands` in the source.
+// Best viewed with word-wrap OFF.
 
 //	/* Basic Latin                              */    ,{"caption": "InsertUnicode: Basic Latin", "command": "insert_unicode_show_block" , "args": {"name": "Basic Latin"}}
 //	/* Latin-1 Supplement                       */    ,{"caption": "InsertUnicode: Latin-1 Supplement", "command": "insert_unicode_show_block" , "args": {"name": "Latin-1 Supplement"}}
