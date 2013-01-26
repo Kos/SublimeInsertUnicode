@@ -63,7 +63,9 @@ def show_block(view, edit, block):
 def get_label(codeunit, fallback):
 	'Returns a pretty label for the given code unit. Uses a fallback name if not found in data'
 	name = NAMES.get(codeunit, fallback)
-	return '[{0}] {1}'.format(hex(codeunit), name)
+	char = my_unichr(codeunit)
+	code = hex(codeunit)
+	return u'[{code}] {char} {name}'.format(name=name, char=char, code=code)
 
 def my_unichr(n):
     'unichr() can fail with literals bigger than 0xFFFF (narrow Python build)'
