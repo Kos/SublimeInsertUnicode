@@ -17,9 +17,3 @@ Still basic, but more comfy:
 - Make some key bindings to the palettes you often use.
 
 Use Sublime Text's fuzzy matching to find interesting symbols in the lists.
-
-## Known issues
-
-There's a [known bug][udb] in Sublime Text 2 that sometimes makes it impossible to import the `unicodedata` module. If it affects you, it will prevent the plug-in from loading (you can find the `ImportException` in the console). I'll try to work around that.
-
-[udb]: http://www.sublimetext.com/forum/viewtopic.php?f=3&t=3462
