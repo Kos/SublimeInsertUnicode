@@ -139,7 +139,8 @@ def generate_commands():
 	for b in BLOCKS:
 		print command_template.format(b.name)
 
-def fire_load():
-	threading.Thread(target=load_data).start()
 
-fire_load()
+threading.Thread(target=load_data).start()
+
+#load_data()
+#generate_commands()
