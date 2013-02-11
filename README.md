@@ -17,3 +17,7 @@ Still basic, but more comfy:
 - Make some key bindings to the palettes you often use.
 
 Use Sublime Text's fuzzy matching to find interesting symbols in the lists.
+
+## Status
+
+1.0-ish. Appears to work nice.
