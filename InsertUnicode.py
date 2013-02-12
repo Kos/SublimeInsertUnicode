@@ -1,12 +1,14 @@
 import sublime, sublime_plugin
 import collections, os, urllib2, threading
-from os.path import dirname, realpath
+from os.path import dirname, realpath, basename
 
 BLOCKS = None
 NAMES = None
 
-PACKAGE_DIR = dirname(realpath(__file__))
+LOAD_PENDING = False
 
+PACKAGE_NAME = "InsertUnicode"
+PACKAGE_DIR = dirname(realpath(__file__))
 
 UNICODEDATA_FILENAME = os.path.join(PACKAGE_DIR, 'UnicodeData.txt')
 BLOCKS_FILENAME = os.path.join(PACKAGE_DIR, 'Blocks.txt')
@@ -14,6 +16,8 @@ BLOCKS_FILENAME = os.path.join(PACKAGE_DIR, 'Blocks.txt')
 UNICODEDATA_URL = 'ftp://ftp.unicode.org/Public/UNIDATA/UnicodeData.txt'
 BLOCKS_URL = 'ftp://ftp.unicode.org/Public/UNIDATA/Blocks.txt'
 
+def safe_status_message(s):
+	sublime.set_timeout(lambda: sublime.status_message(s), 0)
 
 def readlines_cached(filename, url):
 	'''Reads the lines from the given file. If file is not present,
@@ -25,16 +29,27 @@ def readlines_cached(filename, url):
 			return f.readlines()
 	except:
 		lines = urllib2.urlopen(url).readlines()
+		safe_status_message("{0}: got {1}".format(PACKAGE_NAME, basename(filename)))
 		with open(filename, 'w') as f:
 			f.writelines(lines)
 		return lines
 
 def load_data():
+	global BLOCKS, NAMES, LOAD_PENDING
+	LOAD_PENDING = True
 	# This may take some time.
-	blocks = list(read_blocks(readlines_cached(BLOCKS_FILENAME, BLOCKS_URL)))
-	names = dict(read_unicodedata_names(readlines_cached(UNICODEDATA_FILENAME,UNICODEDATA_URL)))
-	global BLOCKS, NAMES
-	BLOCKS, NAMES = blocks, names
+	try:
+		blocks = list(read_blocks(readlines_cached(BLOCKS_FILENAME, BLOCKS_URL)))
+		names = dict(read_unicodedata_names(readlines_cached(UNICODEDATA_FILENAME,UNICODEDATA_URL)))
+		BLOCKS, NAMES = blocks, names
+	except Exception, e:
+		err = "{0}: Failed to load data".format(PACKAGE_NAME)
+		safe_status_message(err)
+		print err
+		import traceback; traceback.print_exc()
+	finally:
+		LOAD_PENDING = False
+
 
 
 def show_block_list(view, edit):
@@ -85,7 +100,10 @@ class InsertUnicodeShowBlockCommand(sublime_plugin.TextCommand):
 
 	def run(self, edit, **kwargs):
 		if BLOCKS is None:
-			sublime.status_message('{0}: DB not loaded'.format(PACKAGE_NAME))
+			if LOAD_PENDING:
+				sublime.status_message('{0}: Still loading DB'.format(PACKAGE_NAME))
+			else:
+				sublime.status_message('{0}: DB failed to load'.format(PACKAGE_NAME))
 			return
 		try:
 			name = kwargs.pop('name')
@@ -94,7 +112,7 @@ class InsertUnicodeShowBlockCommand(sublime_plugin.TextCommand):
 		try:
 			(block,) = (block for block in BLOCKS if block.name.lower() == name.lower())
 		except ValueError:
-			msg = 'InsertUnicode: No such block: {0}'.format(name)
+			msg = '{0}: No such block: {1}'.format(PACKAGE_NAME, name)
 			sublime.status_message(msg)
 			return
 		show_block(self.view, edit, block)
