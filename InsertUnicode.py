@@ -1,11 +1,12 @@
 import sublime, sublime_plugin
 import collections, os, urllib2, threading
+from os.path import dirname, realpath
 
 BLOCKS = None
 NAMES = None
 
-PACKAGE_NAME = 'InsertUnicode'
-PACKAGE_DIR = os.path.join(sublime.packages_path(), PACKAGE_NAME)
+PACKAGE_DIR = dirname(realpath(__file__))
+
 
 UNICODEDATA_FILENAME = os.path.join(PACKAGE_DIR, 'UnicodeData.txt')
 BLOCKS_FILENAME = os.path.join(PACKAGE_DIR, 'Blocks.txt')
