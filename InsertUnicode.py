@@ -9,6 +9,7 @@ PACKAGE_DIR = dirname(realpath(__file__))
 
 UNICODEDATA_FILENAME = os.path.join(PACKAGE_DIR, 'UnicodeData.txt')
 BLOCKS_FILENAME = os.path.join(PACKAGE_DIR, 'Blocks.txt')
+SETTINGS_FILENAME = 'InsertUnicode.sublime-settings'
 
 UnicodeBlock = collections.namedtuple('UnicodeBlock', 'min max name')
 
@@ -52,6 +53,7 @@ def _read_unicodedata_names(lines):
         code = int(code, 16)
         yield (code, name)
 
+
 _BLOCKS = list(_read_blocks(open(BLOCKS_FILENAME).readlines()))
 _NAMES = dict(_read_unicodedata_names(open(UNICODEDATA_FILENAME).readlines()))
 
@@ -68,6 +70,15 @@ def _get_label(codeunit, fallback):
     return '[{code}] {char} {name}'.format(name=name, char=char, code=code)
 
 
+def _insert_char(view, codeunits, code):
+    if code == -1:
+        return
+    else:
+        codeunit = codeunits[code]
+        insertion = chr(codeunit)
+        view.run_command('insert', {'characters': insertion})
+
+
 class InsertUnicodeShowBlockListCommand(sublime_plugin.TextCommand):
     def _show_block_list(self):
         block_names = [b.name for b in _BLOCKS]
@@ -80,19 +91,11 @@ class InsertUnicodeShowBlockListCommand(sublime_plugin.TextCommand):
                 block_names = [_get_label(codeunit, fallback='(unknown)')
                                for codeunit in codeunits]
 
-                def insert_char(code):
-                    if code == -1:
-                        return
-                    else:
-                        codeunit = codeunits[code]
-                        insertion = chr(codeunit)
-                        self.view.run_command('insert',
-                                              {'characters': insertion})
-
                 sublime.set_timeout(
-                    lambda: self.view.window().show_quick_panel(block_names,
-                                                                insert_char,
-                                                                0),
+                    lambda: self.view.window().show_quick_panel(
+                        block_names,
+                        lambda code: _insert_char(self.view, codeunits, code),
+                        0),
                     10)
 
         self.view.window().show_quick_panel(block_names, show_block, 0)
@@ -104,3 +107,18 @@ class InsertUnicodeShowBlockListCommand(sublime_plugin.TextCommand):
             return
         else:
             self._show_block_list()
+
+
+_SETTINGS = sublime.load_settings(SETTINGS_FILENAME)
+_USER_CHARS = [int(char, 16) for char in _SETTINGS.get('user_characters')]
+
+
+class InsertUnicodeShowUserListCommand(sublime_plugin.TextCommand):
+    def run (self, edit):
+        block_names = [_get_label(codeunit, fallback='(unknown)')
+                       for codeunit in _USER_CHARS]
+
+        self.view.window().show_quick_panel(
+            block_names, 
+            lambda code: _insert_char(self.view, _USER_CHARS, code),
+            0)

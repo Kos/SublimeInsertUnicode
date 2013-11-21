@@ -1,4 +1,7 @@
 [
   {"caption": "InsertUnicode: (Block list)",
-    "command": "insert_unicode_show_block_list"}
+   "command": "insert_unicode_show_block_list"},
+
+  {"caption": "InsertUnicode: (User list)",
+   "command": "insert_unicode_show_user_list"}
 ]
